@@ -11,6 +11,7 @@ export const translations = {
     uploadVideo: "Upload Video",
     history: "History",
     guide: "Guide",
+    planner: "Planner",
     
     // Hero Section
     heroTitle: "AI-Powered Weed Detection",
@@ -28,7 +29,7 @@ export const translations = {
     videoUpload: "Video Upload",
     videoUploadDesc: "Upload a video for frame-by-frame analysis",
     mobileCamera: "Mobile Camera",
-    mobileCameraDesc: "Scan QR code to connect your mobile camera",
+    mobileCameraDesc: "Use your phone camera directly for scanning",
     
     // Camera Section
     startCamera: "Start Camera",
@@ -37,6 +38,24 @@ export const translations = {
     switchCamera: "Switch Camera",
     cameraError: "Camera access denied. Please allow camera permissions.",
     connecting: "Connecting to camera...",
+    cameraConnected: "Camera connected!",
+    cameraPermissionDenied: "Camera permission denied. Please allow access.",
+    noCameraFound: "No camera found on this device.",
+    clickToStart: "Click Start Camera to begin",
+    tryAgain: "Try Again",
+    scanNow: "Scan Now",
+    scanTip: "Tip for best results:",
+    scanTipDesc: "Point camera at your crop field with good lighting. Hold steady and tap Scan.",
+    aiProcessing: "AI is analyzing your image",
+    cameraAccessNeeded: "Camera Access Needed",
+    cameraAccessDesc: "To scan your crops, we need camera access. Your privacy is protected.",
+    allowCamera: "Allow Camera Access",
+    connectingCamera: "Connecting to camera...",
+    scanningForWeeds: "Scanning for weeds...",
+    live: "LIVE",
+    weedsFound: "weeds found!",
+    analysisError: "Failed to analyze. Please try again.",
+    scanResults: "Scan Results",
     
     // Upload Section
     dragDrop: "Drag & drop your file here",
@@ -45,6 +64,12 @@ export const translations = {
     supportedFormats: "Supported formats: JPG, PNG, GIF, MP4, WEBM",
     maxSize: "Max file size: 50MB",
     analyzing: "Analyzing...",
+    invalidFile: "Invalid file type",
+    fileTooLarge: "File too large",
+    videoFormats: "MP4, WEBM, MOV • Max 100MB",
+    analyzeFrame: "Analyze Frame",
+    pause: "Pause",
+    play: "Play",
     
     // Results
     results: "Detection Results",
@@ -98,6 +123,18 @@ export const translations = {
     guideStep4Desc: "View detection results, weed types, locations, and recommended remedies.",
     watchDemo: "Watch Demo Video",
     
+    // Demo Section
+    howItWorks: "How It Works",
+    howItWorksDesc: "See how AgriScan AI detects weeds in your field with just a few simple steps",
+    demoStep1Title: "Point Camera at Field",
+    demoStep1Desc: "Use your phone or device camera to capture the crop area",
+    demoStep2Title: "AI Scans for Weeds",
+    demoStep2Desc: "Advanced neural network analyzes the image in real-time",
+    demoStep3Title: "Red Boxes Mark Weeds",
+    demoStep3Desc: "Each weed is highlighted with a red bounding box",
+    demoStep4Title: "Get Treatment Advice",
+    demoStep4Desc: "Receive specific remedies for each weed type detected",
+    
     // Chatbot
     chatbotTitle: "AgriBot Assistant",
     chatbotPlaceholder: "Ask me anything about weed detection...",
@@ -112,6 +149,37 @@ export const translations = {
     openInMobile: "Open in Mobile Browser",
     copyLink: "Copy Link",
     linkCopied: "Link copied!",
+    
+    // Planner
+    smartPlantingPlanner: "Smart Planting Planner",
+    plannerDesc: "Plan your crop planting for autonomous robots",
+    configuration: "Configuration",
+    selectCrop: "Select Crop",
+    rowSpacing: "Row Spacing (cm)",
+    plantSpacing: "Plant Spacing (cm)",
+    plantingDepth: "Planting Depth (cm)",
+    fieldWidth: "Field Width (cm)",
+    fieldLength: "Field Length (cm)",
+    plantingSummary: "Planting Summary",
+    totalRows: "Total Rows",
+    plantsPerRow: "Plants/Row",
+    totalPlants: "Total Plants",
+    exportJSON: "Export JSON",
+    exportCSV: "Export CSV",
+    exportSuccess: "Exported successfully!",
+    visualPlantingGrid: "Visual Planting Grid & Robot Path",
+    plantPosition: "Plant Position",
+    robotPath: "Robot Path",
+    gridPreview: "Showing preview (actual grid is larger)",
+    rice: "Rice",
+    maize: "Maize",
+    cotton: "Cotton",
+    tomato: "Tomato",
+    groundnut: "Groundnut",
+    wheat: "Wheat",
+    sugarcane: "Sugarcane",
+    potato: "Potato",
+    custom: "Custom",
     
     // Misc
     close: "Close",
