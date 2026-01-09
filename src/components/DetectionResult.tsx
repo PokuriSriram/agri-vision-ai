@@ -2,6 +2,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { CheckCircle2, AlertTriangle, Clock, Target } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { WeedRemedies } from './WeedRemedies';
 
 interface WeedInfo {
   type: string;
@@ -98,6 +99,11 @@ export function DetectionResult({
         </Card>
       )}
 
+      {/* Remedies - show only when weeds detected */}
+      {weedsDetected && (
+        <WeedRemedies weedTypes={weeds.map(w => w.type)} />
+      )}
+
       {/* Actions */}
       <div className="flex gap-3">
         <Button onClick={onNewScan} className="flex-1 bg-gradient-hero">
@@ -112,3 +118,4 @@ export function DetectionResult({
     </div>
   );
 }
+

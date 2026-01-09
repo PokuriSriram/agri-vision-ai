@@ -1,29 +1,48 @@
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Globe } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+
+const languages = [
+  { code: 'en', label: 'English', short: 'EN' },
+  { code: 'hi', label: 'हिंदी', short: 'हि' },
+  { code: 'ta', label: 'தமிழ்', short: 'த' },
+  { code: 'te', label: 'తెలుగు', short: 'తె' },
+  { code: 'kn', label: 'ಕನ್ನಡ', short: 'ಕ' },
+  { code: 'mr', label: 'मराठी', short: 'म' },
+  { code: 'bn', label: 'বাংলা', short: 'বা' },
+  { code: 'pa', label: 'ਪੰਜਾਬੀ', short: 'ਪੰ' },
+] as const;
 
 export function LanguageSwitcher() {
   const { language, setLanguage } = useLanguage();
+  const currentLang = languages.find(l => l.code === language) || languages[0];
 
   return (
-    <div className="language-switcher">
-      <Globe className="w-4 h-4 text-muted-foreground ml-2" />
-      <Button
-        variant={language === 'en' ? 'default' : 'ghost'}
-        size="sm"
-        onClick={() => setLanguage('en')}
-        className="rounded-full h-8 px-3 text-sm font-medium"
-      >
-        EN
-      </Button>
-      <Button
-        variant={language === 'hi' ? 'default' : 'ghost'}
-        size="sm"
-        onClick={() => setLanguage('hi')}
-        className="rounded-full h-8 px-3 text-sm font-medium"
-      >
-        हिंदी
-      </Button>
-    </div>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="sm" className="gap-2">
+          <Globe className="w-4 h-4" />
+          <span className="hidden sm:inline">{currentLang.label}</span>
+          <span className="sm:hidden">{currentLang.short}</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        {languages.map((lang) => (
+          <DropdownMenuItem
+            key={lang.code}
+            onClick={() => setLanguage(lang.code as any)}
+            className={language === lang.code ? 'bg-accent' : ''}
+          >
+            {lang.label}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
