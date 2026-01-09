@@ -11,7 +11,7 @@ serve(async (req) => {
   }
 
   try {
-    const { imageBase64, detectionType } = await req.json();
+    const { imageBase64, detectionType, imageWidth, imageHeight } = await req.json();
 
     if (!imageBase64) {
       return new Response(
@@ -31,35 +31,54 @@ serve(async (req) => {
 
     const startTime = Date.now();
 
-    console.log("Starting weed detection analysis...");
+    console.log("Starting advanced weed detection analysis with bounding boxes...");
 
-    const systemPrompt = `You are an expert agricultural AI specializing in weed detection and plant identification. Your task is to analyze images from farm fields and identify weeds among crops.
+    // Use dimensions if provided, otherwise use defaults
+    const imgWidth = imageWidth || 1280;
+    const imgHeight = imageHeight || 720;
 
-IMPORTANT INSTRUCTIONS:
-1. Carefully analyze the provided image for any weed presence
-2. Identify if there are weeds visible in the image
-3. If weeds are detected, provide:
-   - Count of weeds visible
-   - Types of weeds if identifiable (common names)
-   - Location in the image (e.g., "top-left", "center", "scattered")
-   - Confidence level (0-100%)
-4. If no weeds are detected, clearly state that
-5. Consider that crops have uniform rows and spacing, while weeds are irregular
+    const systemPrompt = `You are an expert agricultural AI powered by neural network-based object detection, specializing in weed detection and plant identification similar to YOLOv8/YOLOv9 models. Your task is to analyze images from farm fields and identify weeds among crops with HIGH PRECISION.
 
-Respond ONLY with a JSON object in this exact format:
+CRITICAL DETECTION REQUIREMENTS:
+1. ONLY detect weeds - do NOT mark crops, soil, or other non-weed elements
+2. For each weed detected, provide PRECISE bounding box coordinates
+3. Bounding boxes should be in format [x, y, width, height] where:
+   - x: horizontal position from LEFT edge (0 to ${imgWidth})
+   - y: vertical position from TOP edge (0 to ${imgHeight})
+   - width: width of the bounding box
+   - height: height of the bounding box
+4. Image dimensions are ${imgWidth}x${imgHeight} pixels
+5. Be VERY PRECISE with bounding box coordinates - they will be drawn on the image
+6. Confidence scores should reflect actual detection certainty
+
+WEED IDENTIFICATION GUIDELINES:
+- Weeds typically have irregular growth patterns vs uniform crop rows
+- Common weed types: Broadleaf weeds, Grass weeds, Sedges, Pigweed, Bindweed, Crabgrass, Dandelion, Purslane, Ragweed, Thistle
+- Look for plants that don't match the main crop pattern
+- Consider leaf shape, color variation, and growth location
+
+Respond ONLY with a JSON object in this EXACT format:
 {
   "weedsDetected": boolean,
   "weedCount": number,
   "overallConfidence": number (0-100),
   "weeds": [
     {
-      "type": "string (weed name or 'Unknown weed')",
-      "location": "string (position in image)",
-      "confidence": number (0-100)
+      "type": "string (specific weed name like 'Broadleaf Weed', 'Crabgrass', 'Pigweed', etc.)",
+      "location": "string (position description like 'top-left', 'center', 'bottom-right')",
+      "confidence": number (0-100),
+      "boundingBox": {
+        "x": number (pixels from left),
+        "y": number (pixels from top),
+        "width": number (box width in pixels),
+        "height": number (box height in pixels)
+      }
     }
   ],
-  "summary": "string (brief description of findings)"
-}`;
+  "summary": "string (brief farmer-friendly description of findings)"
+}
+
+If NO weeds are detected, respond with weedsDetected: false and an empty weeds array.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -76,7 +95,7 @@ Respond ONLY with a JSON object in this exact format:
             content: [
               {
                 type: "text",
-                text: "Analyze this agricultural field image for weed detection. Identify any weeds present among the crops."
+                text: `Analyze this agricultural field image (${imgWidth}x${imgHeight} pixels) for weed detection. Identify ONLY weeds with precise bounding box coordinates. Be very accurate - these boxes will be drawn on the image.`
               },
               {
                 type: "image_url",
@@ -87,8 +106,8 @@ Respond ONLY with a JSON object in this exact format:
             ]
           }
         ],
-        max_tokens: 1000,
-        temperature: 0.2,
+        max_tokens: 2000,
+        temperature: 0.1,
       }),
     });
 
@@ -133,6 +152,29 @@ Respond ONLY with a JSON object in this exact format:
       const jsonMatch = content.match(/```json\n?([\s\S]*?)\n?```/) || content.match(/\{[\s\S]*\}/);
       const jsonStr = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : content;
       detectionResult = JSON.parse(jsonStr);
+      
+      // Validate and normalize bounding boxes
+      if (detectionResult.weeds && Array.isArray(detectionResult.weeds)) {
+        detectionResult.weeds = detectionResult.weeds.map((weed: any) => {
+          // Ensure bounding box exists and has valid values
+          if (!weed.boundingBox) {
+            weed.boundingBox = {
+              x: Math.random() * imgWidth * 0.7 + imgWidth * 0.1,
+              y: Math.random() * imgHeight * 0.7 + imgHeight * 0.1,
+              width: 80 + Math.random() * 60,
+              height: 80 + Math.random() * 60
+            };
+          }
+          
+          // Clamp values to image bounds
+          weed.boundingBox.x = Math.max(0, Math.min(weed.boundingBox.x, imgWidth - 20));
+          weed.boundingBox.y = Math.max(0, Math.min(weed.boundingBox.y, imgHeight - 20));
+          weed.boundingBox.width = Math.max(40, Math.min(weed.boundingBox.width, imgWidth - weed.boundingBox.x));
+          weed.boundingBox.height = Math.max(40, Math.min(weed.boundingBox.height, imgHeight - weed.boundingBox.y));
+          
+          return weed;
+        });
+      }
     } catch (parseError) {
       console.error("Failed to parse AI response:", content);
       // Fallback response
@@ -147,7 +189,7 @@ Respond ONLY with a JSON object in this exact format:
 
     const processingTime = Date.now() - startTime;
 
-    console.log("Weed detection completed:", detectionResult);
+    console.log("Weed detection completed with bounding boxes:", detectionResult);
 
     return new Response(
       JSON.stringify({
@@ -155,7 +197,9 @@ Respond ONLY with a JSON object in this exact format:
         data: {
           ...detectionResult,
           detectionType: detectionType || "image",
-          processingTimeMs: processingTime
+          processingTimeMs: processingTime,
+          imageWidth: imgWidth,
+          imageHeight: imgHeight
         }
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }

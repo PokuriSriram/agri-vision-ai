@@ -9,6 +9,8 @@ import { DetectionHistory } from '@/components/DetectionHistory';
 import { MobileCameraConnection } from '@/components/MobileCameraConnection';
 import { UserGuide } from '@/components/UserGuide';
 import { Chatbot } from '@/components/Chatbot';
+import { DemoSection } from '@/components/DemoSection';
+import { SmartPlantingPlanner } from '@/components/SmartPlantingPlanner';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
@@ -28,13 +30,18 @@ function AppContent() {
   const renderContent = () => {
     switch (activeTab) {
       case 'home':
-        return <HeroSection onModeSelect={setActiveTab} />;
+        return (
+          <div className="space-y-8">
+            <HeroSection onModeSelect={setActiveTab} />
+            <DemoSection />
+          </div>
+        );
       case 'live':
         return (
           <div className="space-y-4">
             <div className="flex items-center gap-3 mb-4">
-              <Button variant="ghost" size="sm" onClick={() => setActiveTab('home')}>
-                <ArrowLeft className="w-4 h-4 mr-1" />
+              <Button variant="ghost" size="lg" onClick={() => setActiveTab('home')} className="h-12">
+                <ArrowLeft className="w-5 h-5 mr-1" />
                 {t('back')}
               </Button>
               <h2 className="text-xl font-bold">{t('liveFeed')}</h2>
@@ -46,8 +53,8 @@ function AppContent() {
         return (
           <div className="space-y-4">
             <div className="flex items-center gap-3 mb-4">
-              <Button variant="ghost" size="sm" onClick={() => setActiveTab('home')}>
-                <ArrowLeft className="w-4 h-4 mr-1" />
+              <Button variant="ghost" size="lg" onClick={() => setActiveTab('home')} className="h-12">
+                <ArrowLeft className="w-5 h-5 mr-1" />
                 {t('back')}
               </Button>
               <h2 className="text-xl font-bold">{t('imageUpload')}</h2>
@@ -59,8 +66,8 @@ function AppContent() {
         return (
           <div className="space-y-4">
             <div className="flex items-center gap-3 mb-4">
-              <Button variant="ghost" size="sm" onClick={() => setActiveTab('home')}>
-                <ArrowLeft className="w-4 h-4 mr-1" />
+              <Button variant="ghost" size="lg" onClick={() => setActiveTab('home')} className="h-12">
+                <ArrowLeft className="w-5 h-5 mr-1" />
                 {t('back')}
               </Button>
               <h2 className="text-xl font-bold">{t('videoUpload')}</h2>
@@ -72,6 +79,8 @@ function AppContent() {
         return <MobileCameraConnection onBack={() => setActiveTab('home')} />;
       case 'guide':
         return <UserGuide onBack={() => setActiveTab('home')} />;
+      case 'planner':
+        return <SmartPlantingPlanner onBack={() => setActiveTab('home')} />;
       case 'history':
         return <DetectionHistory />;
       default:
