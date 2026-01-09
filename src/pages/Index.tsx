@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { Header } from '@/components/Header';
 import { HeroSection } from '@/components/HeroSection';
@@ -6,37 +6,24 @@ import { LiveCameraFeed } from '@/components/LiveCameraFeed';
 import { ImageUpload } from '@/components/ImageUpload';
 import { VideoUpload } from '@/components/VideoUpload';
 import { DetectionHistory } from '@/components/DetectionHistory';
+import { MobileCameraConnection } from '@/components/MobileCameraConnection';
+import { UserGuide } from '@/components/UserGuide';
+import { Chatbot } from '@/components/Chatbot';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Card } from '@/components/ui/card';
-import { Smartphone, QrCode, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-
-function MobileCameraSection({ onBack }: { onBack: () => void }) {
-  const { t } = useLanguage();
-  return (
-    <Card className="glass-card p-8 text-center">
-      <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-wheat flex items-center justify-center">
-        <QrCode className="w-10 h-10 text-secondary-foreground" />
-      </div>
-      <h3 className="text-xl font-bold mb-2">{t('mobileCamera')}</h3>
-      <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-        {t('mobileCameraDesc')}
-      </p>
-      <div className="p-6 bg-muted rounded-xl inline-block mb-6">
-        <Smartphone className="w-24 h-24 text-muted-foreground mx-auto" />
-        <p className="text-sm text-muted-foreground mt-2">Coming Soon</p>
-      </div>
-      <Button variant="outline" onClick={onBack}>
-        <ArrowLeft className="w-4 h-4 mr-2" />
-        {t('back')}
-      </Button>
-    </Card>
-  );
-}
+import { ArrowLeft } from 'lucide-react';
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState('home');
   const { t } = useLanguage();
+
+  // Check URL params for mobile camera mode
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('mode') === 'mobile-camera') {
+      setActiveTab('mobile');
+    }
+  }, []);
 
   const renderContent = () => {
     switch (activeTab) {
@@ -82,7 +69,9 @@ function AppContent() {
           </div>
         );
       case 'mobile':
-        return <MobileCameraSection onBack={() => setActiveTab('home')} />;
+        return <MobileCameraConnection onBack={() => setActiveTab('home')} />;
+      case 'guide':
+        return <UserGuide onBack={() => setActiveTab('home')} />;
       case 'history':
         return <DetectionHistory />;
       default:
@@ -99,6 +88,7 @@ function AppContent() {
       <footer className="py-6 text-center text-sm text-muted-foreground">
         <p>{t('madeFor')} 🌾</p>
       </footer>
+      <Chatbot />
     </div>
   );
 }
