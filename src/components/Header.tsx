@@ -15,10 +15,14 @@ export function Header({ activeTab, setActiveTab }: HeaderProps) {
 
   const navItems = [
     { id: 'home', label: t('home') },
+    { id: 'dashboard', label: t('dashboard') },
     { id: 'live', label: t('liveDetection') },
     { id: 'image', label: t('uploadImage') },
     { id: 'video', label: t('uploadVideo') },
+    { id: 'planner', label: t('planner') },
+    { id: 'schemes', label: t('schemes') },
     { id: 'history', label: t('history') },
+    { id: 'guide', label: t('guide') },
   ];
 
   return (
