@@ -11,6 +11,8 @@ import { UserGuide } from '@/components/UserGuide';
 import { Chatbot } from '@/components/Chatbot';
 import { DemoSection } from '@/components/DemoSection';
 import { SmartPlantingPlanner } from '@/components/SmartPlantingPlanner';
+import { FarmerDashboard } from '@/components/FarmerDashboard';
+import { FarmerSchemes } from '@/components/FarmerSchemes';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
@@ -36,6 +38,10 @@ function AppContent() {
             <DemoSection />
           </div>
         );
+      case 'dashboard':
+        return <FarmerDashboard onOpen={setActiveTab} onBack={() => setActiveTab('home')} />;
+      case 'schemes':
+        return <FarmerSchemes onBack={() => setActiveTab('home')} />;
       case 'live':
         return (
           <div className="space-y-4">
