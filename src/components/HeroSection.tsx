@@ -99,14 +99,78 @@ export function HeroSection({ onModeSelect }: HeroSectionProps) {
                   <h3 className="text-lg font-semibold mb-1 group-hover:text-primary transition-colors">
                     {mode.title}
                   </h3>
-                  <p className="text-sm text-muted-foreground">
-                    {mode.description}
-                  </p>
+                  <p className="text-sm text-muted-foreground">{mode.description}</p>
                 </div>
                 <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
               </div>
             </Card>
           ))}
+        </div>
+      </div>
+
+      {/* Farmer Tools */}
+      <div>
+        <h2 className="text-2xl font-bold text-center mb-6">{t('farmerTools') || 'Farmer Tools'}</h2>
+        <div className="grid md:grid-cols-3 gap-4">
+          <Card
+            className="group glass-card p-6 cursor-pointer hover:shadow-elevated transition-all duration-300"
+            onClick={() => onModeSelect('dashboard')}
+          >
+            <div className="flex items-start gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-hero flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                <Zap className="w-7 h-7 text-primary-foreground" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold mb-1 group-hover:text-primary transition-colors">
+                  {t('dashboard') || 'Dashboard'}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {t('dashboardCardDesc') || 'One place for scanning, planner, and schemes'}
+                </p>
+              </div>
+              <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+            </div>
+          </Card>
+
+          <Card
+            className="group glass-card p-6 cursor-pointer hover:shadow-elevated transition-all duration-300"
+            onClick={() => onModeSelect('planner')}
+          >
+            <div className="flex items-start gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-wheat flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                <Leaf className="w-7 h-7 text-primary-foreground" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold mb-1 group-hover:text-primary transition-colors">
+                  {t('planner') || 'Planner'}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {t('plannerCardDesc') || 'Set plant spacing and export robot instructions'}
+                </p>
+              </div>
+              <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+            </div>
+          </Card>
+
+          <Card
+            className="group glass-card p-6 cursor-pointer hover:shadow-elevated transition-all duration-300"
+            onClick={() => onModeSelect('schemes')}
+          >
+            <div className="flex items-start gap-4">
+              <div className="w-14 h-14 rounded-2xl from-secondary to-warning bg-gradient-to-br flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                <Shield className="w-7 h-7 text-primary-foreground" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold mb-1 group-hover:text-primary transition-colors">
+                  {t('schemes') || 'Schemes'}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {t('schemesCardDesc') || 'Government schemes and how to apply'}
+                </p>
+              </div>
+              <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+            </div>
+          </Card>
         </div>
       </div>
     </div>

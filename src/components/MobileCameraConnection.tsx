@@ -30,6 +30,7 @@ export function MobileCameraConnection({ onBack }: MobileCameraConnectionProps) 
   const containerRef = useRef<HTMLDivElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
+  const [shouldStream, setShouldStream] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment');
@@ -41,7 +42,7 @@ export function MobileCameraConnection({ onBack }: MobileCameraConnectionProps) 
 
   // Check camera permission on mount
   useEffect(() => {
-    checkCameraPermission();
+    void checkCameraPermission();
   }, []);
 
   // Update container size on resize
@@ -54,20 +55,88 @@ export function MobileCameraConnection({ onBack }: MobileCameraConnectionProps) 
         });
       }
     };
-    
+
     updateSize();
     window.addEventListener('resize', updateSize);
     return () => window.removeEventListener('resize', updateSize);
   }, [isStreaming]);
 
+  const stopCamera = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setIsStreaming(false);
+  }, []);
+
+  const startCamera = useCallback(async () => {
+    try {
+      setError(null);
+      setPermissionState('checking');
+
+      // restart cleanly
+      stopCamera();
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode,
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+      });
+
+      streamRef.current = stream;
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+
+        const video = videoRef.current;
+        const tryPlay = async () => {
+          try {
+            await video.play();
+          } catch {
+            // Autoplay may be blocked; user can retry from UI.
+          }
+        };
+
+        if (video.readyState >= 1) {
+          void tryPlay();
+        } else {
+          video.onloadedmetadata = () => {
+            void tryPlay();
+          };
+        }
+
+        setIsStreaming(true);
+        setPermissionState('granted');
+        toast.success(t('cameraConnected') || '📷 Camera connected successfully!');
+      }
+    } catch (err: any) {
+      console.error('Camera error:', err);
+      setIsStreaming(false);
+      setPermissionState('denied');
+
+      if (err?.name === 'NotAllowedError' || err?.name === 'SecurityError') {
+        setError(t('cameraPermissionDenied') || '🚫 Camera permission denied. Please allow camera access in your browser settings.');
+      } else if (err?.name === 'NotFoundError' || err?.name === 'OverconstrainedError') {
+        setError(t('noCameraFound') || '📷 No camera found on this device.');
+      } else {
+        setError(t('cameraError') || '❌ Could not access camera. Please try again.');
+      }
+    }
+  }, [facingMode, stopCamera, t]);
+
   const checkCameraPermission = async () => {
     try {
       if ('permissions' in navigator) {
-        const result = await navigator.permissions.query({ name: 'camera' as PermissionName });
-        setPermissionState(result.state as 'prompt' | 'granted' | 'denied');
-        
-        if (result.state === 'granted') {
-          startCamera();
+        const res = await navigator.permissions.query({ name: 'camera' as PermissionName });
+        setPermissionState(res.state as 'prompt' | 'granted' | 'denied');
+
+        if (res.state === 'granted') {
+          setShouldStream(true);
         }
       } else {
         setPermissionState('prompt');
@@ -77,61 +146,28 @@ export function MobileCameraConnection({ onBack }: MobileCameraConnectionProps) 
     }
   };
 
-  const startCamera = useCallback(async () => {
-    try {
-      setError(null);
-      setPermissionState('checking');
-      
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode,
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        },
-      });
-      
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        streamRef.current = stream;
-        setIsStreaming(true);
-        setPermissionState('granted');
-        toast.success(t('cameraConnected') || '📷 Camera connected successfully!');
-      }
-    } catch (err: any) {
-      console.error('Camera error:', err);
-      setPermissionState('denied');
-      
-      if (err.name === 'NotAllowedError') {
-        setError(t('cameraPermissionDenied') || '🚫 Camera permission denied. Please allow camera access in your browser settings.');
-      } else if (err.name === 'NotFoundError') {
-        setError(t('noCameraFound') || '📷 No camera found on this device.');
-      } else {
-        setError(t('cameraError') || '❌ Could not access camera. Please try again.');
-      }
-    }
-  }, [facingMode, t]);
-
-  const stopCamera = useCallback(() => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-    setIsStreaming(false);
+  const requestStart = useCallback(() => {
+    setShouldStream(true);
+    setPermissionState('checking');
   }, []);
 
-  const switchCamera = useCallback(() => {
+  const requestStop = useCallback(() => {
+    setShouldStream(false);
     stopCamera();
-    setFacingMode(prev => prev === 'user' ? 'environment' : 'user');
   }, [stopCamera]);
 
+  const switchCamera = useCallback(() => {
+    setFacingMode((prev) => (prev === 'user' ? 'environment' : 'user'));
+  }, []);
+
+  // Keep camera state stable & predictable
   useEffect(() => {
-    if (permissionState === 'granted' && !isStreaming) {
-      startCamera();
+    if (!shouldStream) {
+      stopCamera();
+      return;
     }
-  }, [facingMode]);
+    void startCamera();
+  }, [shouldStream, facingMode, startCamera, stopCamera]);
 
   useEffect(() => {
     return () => {
@@ -273,7 +309,7 @@ export function MobileCameraConnection({ onBack }: MobileCameraConnectionProps) 
           <p className="text-muted-foreground mb-6 max-w-md mx-auto">
             {t('cameraAccessDesc') || 'To scan your crops for weeds, we need to access your camera. Your privacy is important - images are only processed for weed detection.'}
           </p>
-          <Button onClick={startCamera} size="lg" className="bg-gradient-hero h-14 px-8 text-lg">
+          <Button onClick={requestStart} size="lg" className="bg-gradient-hero h-14 px-8 text-lg">
             <Camera className="w-5 h-5 mr-2" />
             {t('allowCamera') || 'Allow Camera Access'}
           </Button>
@@ -286,7 +322,7 @@ export function MobileCameraConnection({ onBack }: MobileCameraConnectionProps) 
           <AlertCircle className="w-16 h-16 mx-auto mb-4 text-destructive" />
           <h3 className="text-xl font-bold mb-2 text-destructive">{t('cameraError') || 'Camera Error'}</h3>
           <p className="text-muted-foreground mb-6 max-w-md mx-auto">{error}</p>
-          <Button onClick={startCamera} size="lg" variant="outline" className="h-12">
+          <Button onClick={requestStart} size="lg" variant="outline" className="h-12">
             <RefreshCw className="w-4 h-4 mr-2" />
             {t('tryAgain') || 'Try Again'}
           </Button>
@@ -350,16 +386,16 @@ export function MobileCameraConnection({ onBack }: MobileCameraConnectionProps) 
       {/* Control buttons */}
       {isStreaming && (
         <div className="flex flex-wrap gap-3">
-          <Button onClick={stopCamera} variant="outline" size="lg" className="flex-1 h-14 text-base">
+          <Button onClick={requestStop} variant="outline" size="lg" className="flex-1 h-14 text-base">
             <CameraOff className="w-5 h-5 mr-2" />
             {t('stopCamera') || 'Stop Camera'}
           </Button>
           <Button onClick={switchCamera} variant="outline" size="lg" className="h-14">
             <RefreshCw className="w-5 h-5" />
           </Button>
-          <Button 
-            onClick={captureAndAnalyze} 
-            disabled={isAnalyzing}
+          <Button
+            onClick={captureAndAnalyze}
+            disabled={isAnalyzing || !isStreaming}
             size="lg"
             className="flex-1 h-14 text-base bg-gradient-hero"
           >

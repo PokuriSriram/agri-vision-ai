@@ -24,6 +24,8 @@ export function LiveCameraFeed() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const [shouldStream, setShouldStream] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment');
@@ -31,40 +33,12 @@ export function LiveCameraFeed() {
   const [result, setResult] = useState<DetectionData | null>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
-  const streamRef = useRef<MediaStream | null>(null);
 
-  const startCamera = useCallback(async () => {
-    try {
-      setError(null);
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode,
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        },
-      });
-      
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        streamRef.current = stream;
-        setIsStreaming(true);
-        toast.success(t('cameraConnected') || '📷 Camera started!');
-      }
-    } catch (err: any) {
-      console.error('Camera error:', err);
-      if (err.name === 'NotAllowedError') {
-        setError(t('cameraPermissionDenied') || '🚫 Camera permission denied. Please allow camera access.');
-      } else if (err.name === 'NotFoundError') {
-        setError(t('noCameraFound') || '📷 No camera found.');
-      } else {
-        setError(t('cameraError') || '❌ Camera error. Please try again.');
-      }
-    }
-  }, [facingMode, t]);
+  const streamRef = useRef<MediaStream | null>(null);
 
   const stopCamera = useCallback(() => {
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
     }
     if (videoRef.current) {
@@ -73,16 +47,81 @@ export function LiveCameraFeed() {
     setIsStreaming(false);
   }, []);
 
-  const switchCamera = useCallback(() => {
+  const startCamera = useCallback(async () => {
+    try {
+      setError(null);
+      // restart cleanly
+      stopCamera();
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode,
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+      });
+
+      streamRef.current = stream;
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+
+        // iOS/Safari can require an explicit play after metadata is ready
+        const video = videoRef.current;
+        const tryPlay = async () => {
+          try {
+            await video.play();
+          } catch {
+            // If autoplay is blocked, user will tap Scan/Start again; keep UI stable.
+          }
+        };
+
+        if (video.readyState >= 1) {
+          void tryPlay();
+        } else {
+          video.onloadedmetadata = () => {
+            void tryPlay();
+          };
+        }
+
+        setIsStreaming(true);
+        toast.success(t('cameraConnected') || '📷 Camera started!');
+      }
+    } catch (err: any) {
+      console.error('Camera error:', err);
+      setIsStreaming(false);
+
+      if (err?.name === 'NotAllowedError' || err?.name === 'SecurityError') {
+        setError(t('cameraPermissionDenied') || '🚫 Camera permission denied. Please allow camera access.');
+      } else if (err?.name === 'NotFoundError' || err?.name === 'OverconstrainedError') {
+        setError(t('noCameraFound') || '📷 No camera found (or camera not available).');
+      } else {
+        setError(t('cameraError') || '❌ Camera error. Please try again.');
+      }
+    }
+  }, [facingMode, stopCamera, t]);
+
+  const requestStart = useCallback(() => {
+    setShouldStream(true);
+  }, []);
+
+  const requestStop = useCallback(() => {
+    setShouldStream(false);
     stopCamera();
-    setFacingMode(prev => prev === 'user' ? 'environment' : 'user');
   }, [stopCamera]);
 
+  const switchCamera = useCallback(() => {
+    setFacingMode((prev) => (prev === 'user' ? 'environment' : 'user'));
+  }, []);
+
+  // Keep camera state stable & predictable
   useEffect(() => {
-    if (isStreaming && facingMode) {
-      startCamera();
+    if (!shouldStream) {
+      stopCamera();
+      return;
     }
-  }, [facingMode]);
+    void startCamera();
+  }, [shouldStream, facingMode, startCamera, stopCamera]);
 
   useEffect(() => {
     return () => {
@@ -248,7 +287,7 @@ export function LiveCameraFeed() {
             <div className="text-center p-6">
               <AlertCircle className="w-16 h-16 mx-auto mb-4 text-destructive" />
               <p className="text-destructive font-medium">{error}</p>
-              <Button onClick={startCamera} variant="outline" className="mt-4">
+              <Button onClick={requestStart} variant="outline" className="mt-4">
                 {t('tryAgain') || 'Try Again'}
               </Button>
             </div>
@@ -285,23 +324,23 @@ export function LiveCameraFeed() {
       </Card>
 
       <div className="flex flex-wrap gap-3">
-        {!isStreaming ? (
-          <Button onClick={startCamera} size="lg" className="flex-1 bg-gradient-hero h-14 text-base">
+        {!shouldStream ? (
+          <Button onClick={requestStart} size="lg" className="flex-1 bg-gradient-hero h-14 text-base">
             <Camera className="w-5 h-5 mr-2" />
             {t('startCamera') || 'Start Camera'}
           </Button>
         ) : (
           <>
-            <Button onClick={stopCamera} variant="outline" size="lg" className="flex-1 h-14 text-base">
+            <Button onClick={requestStop} variant="outline" size="lg" className="flex-1 h-14 text-base">
               <CameraOff className="w-5 h-5 mr-2" />
               {t('stopCamera') || 'Stop Camera'}
             </Button>
             <Button onClick={switchCamera} variant="outline" size="lg" className="h-14">
               <RefreshCw className="w-5 h-5" />
             </Button>
-            <Button 
-              onClick={captureAndAnalyze} 
-              disabled={isAnalyzing}
+            <Button
+              onClick={captureAndAnalyze}
+              disabled={isAnalyzing || !isStreaming}
               size="lg"
               className="flex-1 bg-gradient-hero h-14 text-base"
             >
